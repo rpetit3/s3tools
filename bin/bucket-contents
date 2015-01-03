@@ -5,6 +5,18 @@ bucket-contents.
 Print a list of the contents within a bucket.
 """
 
+
+def size(num):
+    """
+    See the following link.
+    http://www.guguncube.com/1648/python-human-readable-bytes-as-kb-mb-gb-tb
+    """
+    for x in ['bytes', 'KB', 'MB', 'GB']:
+        if num < 1024.0:
+            return "%3.1f%s" % (num, x)
+        num /= 1024.0
+    return "%3.1f%s" % (num, 'TB')
+
 if __name__ == '__main__':
     import sys
     import argparse as ap
@@ -25,6 +37,10 @@ if __name__ == '__main__':
     group1.add_argument('--limit', metavar="INT", type=int,
                         help='Limit total number of lines. (Default: All)',
                         default=False)
+    group1.add_argument('--print_size', action='store_true', default=False,
+                        help='Print size of file in bytes.')
+    group1.add_argument('--human_readable', action='store_true', default=False,
+                        help='Print size in a human readable form.')
     group1.add_argument('-h', '--help', action='help',
                         help='Show this help message and exit')
 
@@ -45,4 +61,10 @@ if __name__ == '__main__':
         if args.limit and total > args.limit:
             break
         else:
-            print key.name
+            if args.print_size:
+                if args.human_readable:
+                    print "{0}\t{1}".format(key.name, size(key.size))
+                else:
+                    print "{0}\t{1}".format(key.name, key.size)
+            else:
+                print key.name
