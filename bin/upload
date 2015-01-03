@@ -1,0 +1,60 @@
+#! /usr/bin/env python
+"""
+upload.
+
+Upload file in single part and return the MD5.
+"""
+
+if __name__ == '__main__':
+    import argparse as ap
+    import os
+    import sys
+
+    from boto.s3.connection import S3Connection
+    from boto.s3.key import Key
+
+    from aws_keys import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+
+    parser = ap.ArgumentParser(
+        prog='upload',
+        conflict_handler='resolve',
+        description='Upload file in single part and return the MD5.')
+    group1 = parser.add_argument_group('Options', '')
+    group1.add_argument('--file', metavar="STR", type=str, required=True,
+                        help='File to upload.')
+    group1.add_argument('--bucket', metavar="STR", type=str, required=True,
+                        help='Bucket to upload file to.')
+    group1.add_argument('--bucket_path', metavar="STR", type=str,
+                        help='Specific path in bucket. (Default: /)',
+                        default="")
+    group1.add_argument('-h', '--help', action='help',
+                        help='Show this help message and exit')
+
+    if len(sys.argv) == 1:
+        parser.print_usage()
+        sys.exit(1)
+
+    args = parser.parse_args()
+
+    conn = S3Connection(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    bucket = conn.get_bucket(args.bucket)
+
+    # Upload file
+    print "Uploading {0} to '{1}/{2}'".format(
+        args.file,
+        args.bucket,
+        args.bucket_path
+    )
+    bucket_file = "{0}/{1}".format(
+        args.bucket_path,
+        os.path.basename(args.file)
+    )
+
+    # Get key info
+    key = bucket.get_key(bucket_file)
+    if not key:
+        key = Key(bucket)
+        key.key = bucket_file
+    key.set_contents_from_filename(args.file)
+
+    print "Upload completed. MD5: {0}".format(key.etag[1:-1])

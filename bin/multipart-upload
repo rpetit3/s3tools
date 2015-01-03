@@ -1,0 +1,73 @@
+#! /usr/bin/env python
+"""
+upload-large-file.
+
+Upload large files (5+ GB) in multiple parts.
+"""
+
+if __name__ == '__main__':
+    import argparse as ap
+    import boto
+    import math
+    import os
+    import sys
+
+    from filechunkio import FileChunkIO
+
+    from aws_keys import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+
+    parser = ap.ArgumentParser(
+        prog='upload-large-file',
+        conflict_handler='resolve',
+        description='Upload large files (2+ GB) in multiple parts.')
+    group1 = parser.add_argument_group('Options', '')
+    group1.add_argument('--file', metavar="STR", type=str, required=True,
+                        help='File to upload.')
+    group1.add_argument('--bucket', metavar="STR", type=str, required=True,
+                        help='Bucket to upload file to.')
+    group1.add_argument('--bucket_path', metavar="STR", type=str,
+                        help='Specific path in bucket. (Default: /)',
+                        default="")
+    group1.add_argument('--chunk_size', metavar="INT", type=int,
+                        help='Size of chunks (in MB) to upload. (Default: 50)',
+                        default=50)
+    group1.add_argument('-h', '--help', action='help',
+                        help='Show this help message and exit')
+
+    if len(sys.argv) == 1:
+        parser.print_usage()
+        sys.exit(1)
+
+    args = parser.parse_args()
+
+    conn = boto.connect_s3(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    bucket = conn.get_bucket(args.bucket)
+
+    # File info
+    file = args.file
+    file_size = os.stat(file).st_size
+
+    # Create a multipart upload request
+    mp = bucket.initiate_multipart_upload("{0}/{1}".format(
+        args.bucket_path,
+        os.path.basename(file)
+    ))
+    chunk_size = args.chunk_size * 1048576
+    chunk_count = int(math.ceil(file_size / chunk_size))
+
+    # Upload file
+    print "Uploading {0} to '{1}/{2}'".format(
+        file,
+        args.bucket,
+        args.bucket_path
+    )
+    for i in range(chunk_count + 1):
+        print "Uploading chunk {0} of {1}...".format(i + 1, chunk_count + 1)
+        offset = chunk_size * i
+        bytes = min(chunk_size, file_size - offset)
+        with FileChunkIO(file, 'r', offset=offset, bytes=bytes) as fp:
+            mp.upload_part_from_file(fp, part_num=i + 1)
+
+    # Finish the upload
+    print "Upload completed."
+    mp.complete_upload()
