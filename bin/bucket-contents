@@ -9,6 +9,7 @@ Print a list of the contents within a bucket.
 def size(num):
     """
     See the following link.
+
     http://www.guguncube.com/1648/python-human-readable-bytes-as-kb-mb-gb-tb
     """
     for x in ['bytes', 'KB', 'MB', 'GB']:
