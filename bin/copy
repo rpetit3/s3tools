@@ -1,0 +1,52 @@
+#! /usr/bin/env python
+"""
+copy.
+
+Copy a file between buckets.
+"""
+
+if __name__ == '__main__':
+    import sys
+    import argparse as ap
+    from boto.s3.connection import S3Connection
+
+    from aws_keys import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+
+    parser = ap.ArgumentParser(
+        prog='copy',
+        conflict_handler='resolve',
+        description='Copy a file between buckets.')
+    group1 = parser.add_argument_group('Options', '')
+    group1.add_argument('--from_file', metavar="STR", type=str, required=True,
+                        help='File (and complete path) to copy from.')
+    group1.add_argument('--to_file', metavar="STR", type=str, required=True,
+                        help='File (and complete path) to copy to.')
+    group1.add_argument('--from_bucket', metavar="STR", type=str,
+                        required=True, help='Bucket to copy from.')
+    group1.add_argument('--to_bucket', metavar="STR", type=str, required=True,
+                        help='Bucket to copy to.')
+    group1.add_argument('-h', '--help', action='help',
+                        help='Show this help message and exit')
+
+    if len(sys.argv) == 1:
+        parser.print_usage()
+        sys.exit(1)
+
+    args = parser.parse_args()
+
+    conn = S3Connection(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    bucket = conn.get_bucket(args.from_bucket)
+
+    # Get key file
+    key = bucket.get_key(args.from_file)
+    if key:
+        print "Copying {0} to bucket {1}".format(
+            args.from_file,
+            args.to_bucket
+        )
+        key.copy(args.to_bucket, args.to_file, preserve_acl=True)
+    else:
+        print "{0} not found in bucket {1}".format(
+            args.from_file,
+            args.from_bucket
+        )
