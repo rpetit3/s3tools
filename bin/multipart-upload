@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 """
-upload-large-file.
+multipart-upload.
 
-Upload large files (5+ GB) in multiple parts.
+Upload large files (2+ GB) in multiple parts.
 """
 
 if __name__ == '__main__':
@@ -17,7 +17,7 @@ if __name__ == '__main__':
     from aws_keys import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
     parser = ap.ArgumentParser(
-        prog='upload-large-file',
+        prog='multipart-upload',
         conflict_handler='resolve',
         description='Upload large files (2+ GB) in multiple parts.')
     group1 = parser.add_argument_group('Options', '')

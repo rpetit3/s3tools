@@ -13,18 +13,18 @@ if __name__ == '__main__':
     from aws_keys import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
     parser = ap.ArgumentParser(
-        prog='copy',
+        prog='move',
         conflict_handler='resolve',
-        description='Copy a file between buckets.')
+        description='Move a file between buckets.')
     group1 = parser.add_argument_group('Options', '')
     group1.add_argument('--from_file', metavar="STR", type=str, required=True,
-                        help='File (and complete path) to copy from.')
+                        help='File (and complete path) to move from.')
     group1.add_argument('--to_file', metavar="STR", type=str, required=True,
-                        help='File (and complete path) to copy to.')
+                        help='File (and complete path) to move to.')
     group1.add_argument('--from_bucket', metavar="STR", type=str,
-                        required=True, help='Bucket to copy from.')
+                        required=True, help='Bucket to move from.')
     group1.add_argument('--to_bucket', metavar="STR", type=str, required=True,
-                        help='Bucket to copy to.')
+                        help='Bucket to move to.')
     group1.add_argument('-h', '--help', action='help',
                         help='Show this help message and exit')
 

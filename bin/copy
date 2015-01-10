@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
     conn = S3Connection(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
     bucket = conn.get_bucket(args.from_bucket)
-    print args
+
     # Get key file
     key = bucket.get_key(args.from_file)
     if key:

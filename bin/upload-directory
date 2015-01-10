@@ -1,0 +1,103 @@
+#! /usr/bin/env python
+"""
+upload_directory.
+
+Upload each file within a directory.
+"""
+import os
+
+
+def upload(key, file, bucket_file):
+    """ Upload a file. """
+    print "Uploading {0} to '{1}'".format(
+        file,
+        bucket_file
+    )
+    key.key = bucket_file
+    key.set_contents_from_filename(file)
+
+    return key
+
+
+def multipart_upload(bucket, file, bucket_file):
+    """ Upload a large file in multple parts. """
+    import math
+    from filechunkio import FileChunkIO
+
+    # File info
+    file_size = os.stat(file).st_size
+
+    # Create a multipart upload request
+    mp = bucket.initiate_multipart_upload(bucket_file)
+    chunk_size = 50 * 1048576
+    chunk_count = int(math.ceil(file_size / chunk_size))
+
+    # Upload file
+    print "Uploading {0} to '{1}'".format(
+        file,
+        bucket_file
+    )
+    for i in range(chunk_count + 1):
+        print "Uploading chunk {0} of {1}...".format(i + 1, chunk_count + 1)
+        offset = chunk_size * i
+        bytes = min(chunk_size, file_size - offset)
+        with FileChunkIO(file, 'r', offset=offset, bytes=bytes) as fp:
+            mp.upload_part_from_file(fp, part_num=i + 1)
+
+    # Finish the upload
+    print "Upload completed."
+    mp.complete_upload()
+
+    return bucket.get_key(bucket_file)
+
+
+if __name__ == '__main__':
+    import argparse as ap
+    import sys
+
+    from boto.s3.connection import S3Connection
+    from boto.s3.key import Key
+
+    from aws_keys import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+
+    # Multipart Upload for file large than 2 GBdow
+    LARGE_FILE = 2 * 10 ** 9
+
+    parser = ap.ArgumentParser(
+        prog='upload_directory',
+        conflict_handler='resolve',
+        description='Upload each file within a directory.')
+    group1 = parser.add_argument_group('Options', '')
+    group1.add_argument('--directory', metavar="STR", type=str, required=True,
+                        help='File to upload.')
+    group1.add_argument('--bucket', metavar="STR", type=str, required=True,
+                        help='Bucket to upload file to.')
+    group1.add_argument('--bucket_path', metavar="STR", type=str,
+                        help='Specific path in bucket. (Default: /)',
+                        default="")
+    group1.add_argument('-h', '--help', action='help',
+                        help='Show this help message and exit')
+
+    if len(sys.argv) == 1:
+        parser.print_usage()
+        sys.exit(1)
+
+    args = parser.parse_args()
+
+    # Make S3 connection
+    conn = S3Connection(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    bucket = conn.get_bucket(args.bucket)
+    key = Key(bucket)
+
+    # Walk through the directory and upload files
+    for path, dir, files in os.walk(args.directory):
+        for file in files:
+            relpath = os.path.relpath(os.path.join(path, file))
+            file_size = os.stat(relpath).st_size
+
+            s3_path = "{0}/{1}".format(args.bucket_path, relpath)
+
+            if file_size >= LARGE_FILE:
+                new_key = multipart_upload(bucket, relpath, s3_path)
+            else:
+                new_key = upload(key, relpath, s3_path)

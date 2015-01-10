@@ -1,0 +1,64 @@
+#! /usr/bin/env python
+"""
+download-directory.
+
+Download a directory from a given bucket path.
+"""
+
+if __name__ == '__main__':
+    import os
+    import sys
+    import argparse as ap
+    from boto.s3.connection import S3Connection
+
+    from aws_keys import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+
+    parser = ap.ArgumentParser(
+        prog='download-directory',
+        conflict_handler='resolve',
+        description='Download a directory from a given bucket path.')
+    group1 = parser.add_argument_group('Options', '')
+    group1.add_argument('--directory', metavar="STR", type=str, default="./",
+                        help='Directory to download file to. (Default: ./)')
+    group1.add_argument('--bucket', metavar="STR", type=str, required=True,
+                        help='Bucket to read contents of.')
+    group1.add_argument('--bucket_path', metavar="STR", type=str,
+                        help='Specific path in bucket to download',
+                        required=True)
+    group1.add_argument('-h', '--help', action='help',
+                        help='Show this help message and exit')
+
+    if len(sys.argv) == 1:
+        parser.print_usage()
+        sys.exit(1)
+
+    args = parser.parse_args()
+
+    conn = S3Connection(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    bucket = conn.get_bucket(args.bucket)
+    keys = bucket.list(args.bucket_path)
+    for key in keys:
+        output = "{0}/{1}".format(args.directory, key.name)
+        path = os.path.dirname(key.name)
+        if not os.path.exists(path):
+            os.makedirs(path)
+        print "Downloading {0} to {1}".format(key.name, output)
+        key.get_contents_to_filename(output)
+
+    '''
+    fh = open(args.file, "r")
+    for line in fh:
+        content = line.rstrip()
+        key = bucket.get_key(content)
+
+        if key:
+            output = "{0}/{1}".format(
+                args.directory,
+                os.path.basename(content)
+            )
+            key.get_contents_to_filename(output)
+            print "{0}\tdownloaded".format(content)
+        else:
+            print "{0}\tdoes not exist".format(content)
+    fh.close()
+    '''
