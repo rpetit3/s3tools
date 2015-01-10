@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 """
-copy.
+move.
 
-Copy a file between buckets.
+Move a file between buckets.
 """
 
 if __name__ == '__main__':
@@ -36,15 +36,21 @@ if __name__ == '__main__':
 
     conn = S3Connection(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
     bucket = conn.get_bucket(args.from_bucket)
-    print args
+
     # Get key file
     key = bucket.get_key(args.from_file)
     if key:
-        print "Copying {0} to bucket {1}".format(
+        print "Moving {0} to bucket {1}".format(
             args.from_file,
             args.to_bucket
         )
-        key.copy(args.to_bucket, args.to_file, preserve_acl=True)
+        new_key = key.copy(args.to_bucket, args.to_file, preserve_acl=True)
+        if key.etag[1:-1] == new_key.etag[1:-1]:
+            print "Deleting {0} from bucket {1}".format(
+                args.from_file,
+                args.from_bucket
+            )
+            key.delete()
     else:
         print "{0} not found in bucket {1}".format(
             args.from_file,
