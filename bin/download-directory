@@ -44,21 +44,3 @@ if __name__ == '__main__':
             os.makedirs(path)
         print "Downloading {0} to {1}".format(key.name, output)
         key.get_contents_to_filename(output)
-
-    '''
-    fh = open(args.file, "r")
-    for line in fh:
-        content = line.rstrip()
-        key = bucket.get_key(content)
-
-        if key:
-            output = "{0}/{1}".format(
-                args.directory,
-                os.path.basename(content)
-            )
-            key.get_contents_to_filename(output)
-            print "{0}\tdownloaded".format(content)
-        else:
-            print "{0}\tdoes not exist".format(content)
-    fh.close()
-    '''

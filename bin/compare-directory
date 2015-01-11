@@ -1,0 +1,66 @@
+#! /usr/bin/env python
+"""
+compare-directory.
+
+Compare local and s3 directories.
+"""
+
+if __name__ == '__main__':
+    import argparse as ap
+    import os
+    import shutil
+    import sys
+
+    from boto.s3.connection import S3Connection
+
+    from aws_keys import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+
+    parser = ap.ArgumentParser(
+        prog='upload_directory',
+        conflict_handler='resolve',
+        description='Upload each file within a directory.')
+    group1 = parser.add_argument_group('Options', '')
+    group1.add_argument('--directory', metavar="STR", type=str, required=True,
+                        help='Local directory to check.')
+    group1.add_argument('--bucket', metavar="STR", type=str, required=True,
+                        help='Bucket to upload file to.')
+    group1.add_argument('--bucket_path', metavar="STR", type=str,
+                        help='Specific path in bucket. (Default: /)',
+                        default="")
+    group1.add_argument('--delete_local', action='store_true', default=False,
+                        help='Delete the local directory if identical.')
+    group1.add_argument('-h', '--help', action='help',
+                        help='Show this help message and exit')
+
+    if len(sys.argv) == 1:
+        parser.print_usage()
+        sys.exit(1)
+
+    args = parser.parse_args()
+
+    # Make S3 connection
+    conn = S3Connection(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    bucket = conn.get_bucket(args.bucket)
+    keys = bucket.list(args.bucket_path)
+    s3_size = 0
+    s3_file_count = 0
+    for key in keys:
+        s3_file_count += 1
+        s3_size += key.size
+
+    # Walk through the directory and upload files
+    local_size = 0
+    local_file_count = 0
+    for path, dir, files in os.walk(args.directory):
+        for file in files:
+            relpath = os.path.relpath(os.path.join(path, file))
+            local_size += os.stat(relpath).st_size
+            local_file_count += 1
+
+    if s3_size == local_size and s3_file_count == local_file_count:
+        print 'Total size and file counts match (MD5sums not verified)'
+        if args.delete_local:
+            shutil.rmtree(args.directory)
+    else:
+        print s3_size, s3_file_count
+        print local_size, local_file_count
