@@ -2,7 +2,7 @@
 """
 download.
 
-Download a list of contents within a given file.
+Download a file from a given bucket.
 """
 
 if __name__ == '__main__':
@@ -16,10 +16,10 @@ if __name__ == '__main__':
     parser = ap.ArgumentParser(
         prog='download',
         conflict_handler='resolve',
-        description='Download a list of contents within a given file.')
+        description='Download a file from a given bucket.')
     group1 = parser.add_argument_group('Options', '')
     group1.add_argument('--file', metavar="STR", type=str, required=True,
-                        help='File containing list of contents to delete.')
+                        help='Full path of file to download')
     group1.add_argument('--directory', metavar="STR", type=str, default="./",
                         help='Directory to download file to. (Default: ./)')
     group1.add_argument('--bucket', metavar="STR", type=str, required=True,
@@ -36,18 +36,15 @@ if __name__ == '__main__':
     conn = S3Connection(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
     bucket = conn.get_bucket(args.bucket)
 
-    fh = open(args.file, "r")
-    for line in fh:
-        content = line.rstrip()
-        key = bucket.get_key(content)
 
-        if key:
-            output = "{0}/{1}".format(
-                args.directory,
-                os.path.basename(content)
-            )
-            key.get_contents_to_filename(output)
-            print "{0}\tdownloaded".format(content)
-        else:
-            print "{0}\tdoes not exist".format(content)
-    fh.close()
+    key = bucket.get_key(args.file)
+
+    if key:
+        output = "{0}/{1}".format(
+            args.directory,
+            os.path.basename(args.file)
+        )
+        key.get_contents_to_filename(output)
+        print "Downloading {0} to {1}...".format(args.file, output)
+    else:
+        print "{0} does not exist on bucket {1}".format(args.file, args.bucket)
