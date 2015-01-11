@@ -50,6 +50,13 @@ if __name__ == '__main__':
             )
             original_key.delete()
         else:
-            print "etags do not match, exiting..."
+            if original_key.size == final_key.size:
+                print "Deleting original file {0} from bucket {1}".format(
+                    args.original_file,
+                    args.original_bucket
+                )
+                original_key.delete()
+            else:
+                print "etags and size do not match, exiting..."
     else:
         print "Unable to locate files..."
