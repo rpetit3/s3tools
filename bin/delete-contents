@@ -19,6 +19,8 @@ if __name__ == '__main__':
     group1 = parser.add_argument_group('Options', '')
     group1.add_argument('--file', metavar="STR", type=str, required=True,
                         help='File containing list of contents to delete.')
+    group1.add_argument('--recursive', action='store_true', default=False,
+                        help='File contains directories to remove.')
     group1.add_argument('--bucket', metavar="STR", type=str, required=True,
                         help='Bucket to read contents of.')
     group1.add_argument('-h', '--help', action='help',
@@ -36,11 +38,17 @@ if __name__ == '__main__':
     fh = open(args.file, "r")
     for line in fh:
         content = line.rstrip()
-        key = bucket.get_key(content)
 
-        if key:
-            print "{0}\tdeleted".format(content)
-            key.delete()
+        if not args.recursive:
+            key = bucket.get_key(content)
+            if key:
+                print "{0}\tdeleted".format(content)
+                key.delete()
+            else:
+                print "{0}\tdoes not exist".format(content)
         else:
-            print "{0}\tdoes not exist".format(content)
+            rs = bucket.list(content)
+            for key in rs:
+                print "{0}\tdeleted".format(key.name)
+                key.delete()
     fh.close()

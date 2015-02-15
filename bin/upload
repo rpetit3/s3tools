@@ -27,6 +27,8 @@ if __name__ == '__main__':
     group1.add_argument('--bucket_path', metavar="STR", type=str,
                         help='Specific path in bucket. (Default: /)',
                         default="")
+    group1.add_argument('--quiet', action='store_true', default=False,
+                        help='Only print uploaded MD5 sum', )
     group1.add_argument('-h', '--help', action='help',
                         help='Show this help message and exit')
 
@@ -40,11 +42,12 @@ if __name__ == '__main__':
     bucket = conn.get_bucket(args.bucket)
 
     # Upload file
-    print "Uploading {0} to '{1}/{2}'".format(
-        args.file,
-        args.bucket,
-        args.bucket_path
-    )
+    if not args.quiet:
+        print "Uploading {0} to '{1}/{2}'".format(
+            args.file,
+            args.bucket,
+            args.bucket_path
+        )
     bucket_file = "{0}/{1}".format(
         args.bucket_path,
         os.path.basename(args.file)
@@ -57,4 +60,7 @@ if __name__ == '__main__':
         key.key = bucket_file
     key.set_contents_from_filename(args.file)
 
-    print "Upload completed. MD5: {0}".format(key.etag[1:-1])
+    if not args.quiet:
+        print "Upload completed. MD5: {0}".format(key.etag[1:-1])
+    else:
+        print "{0}".format(key.etag[1:-1])

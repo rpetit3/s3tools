@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
     from aws_keys import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
-    # Multipart Upload for file large than 2 GBdow
+    # Multipart Upload for file large than 2 GB
     LARGE_FILE = 2 * 10 ** 9
 
     parser = ap.ArgumentParser(
