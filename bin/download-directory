@@ -9,6 +9,7 @@ if __name__ == '__main__':
     import os
     import sys
     import argparse as ap
+    from staphopia.tasks import shared
     from boto.s3.connection import S3Connection
 
     from aws_keys import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
@@ -39,8 +40,16 @@ if __name__ == '__main__':
     keys = bucket.list(args.bucket_path)
     for key in keys:
         output = "{0}/{1}".format(args.directory, key.name)
-        path = os.path.dirname(key.name)
+        path = "{0}/{1}".format(args.directory, os.path.dirname(key.name))
         if not os.path.exists(path):
             os.makedirs(path)
-        print "Downloading {0} to {1}".format(key.name, output)
-        key.get_contents_to_filename(output)
+        # Check if file exists
+        if os.path.isfile(output):
+            if shared.get_md5sum(output) == key.etag[1:-1]:
+                print "{0} exists, md5sums match".format(output)
+            else:
+                print "{0} corrupted, downloading again.".format(output)
+                key.get_contents_to_filename(output)
+        else:
+            print "Downloading {0} to {1}".format(key.name, output)
+            key.get_contents_to_filename(output)
